@@ -1,6 +1,6 @@
 import csv
 import sys, getopt
-import os
+import os, subprocess
 
 #youtube-dl --postprocessor-args "-ss 0:0:30 -to 0:1:10" -x --audio-format "wav" https://www.youtube.com/embed/kytfa6eLD_U
 
@@ -9,17 +9,20 @@ genres = ['Pop music', "Rock music", 'Hip hop music', 'Techno', 'Rhythm and blue
 
 label_count_dictionary = {}
 
-youtube_dl_string = "youtube-dl"
+youtube_dl_string = "youtube-dl -q"
 postprocessor_string = '--postprocessor-args'
 start_time_arg = "-ss"
 end_time_arg = "-to"
-audio_format_string = "-x --audio-format"
+audio_format_string = "-x --audio-format \"wav\""
 
 youtube_core_url = "https://www.youtube.com/watch?v="
 
 def print_and_exit(msg,exit_code):
 	print(msg)
 	sys.exit(exit_code)
+
+def is_csv(file_name):
+	return file_name[-4:] == '.csv'  
 
 #create the label subfolders in output_dir if needed
 def maybe_create_folders(output_dir):
@@ -35,12 +38,57 @@ def populate_label_count_dictionary():
 	for genre in genres:
 		label_count_dictionary[genre] = 0
 
-#no space after the string tho - to keep in mind
+def seconds_to_full_time(seconds_string):
+	seconds_int = int(seconds_string.split('.')[0])
+	
+	hours = seconds_int // 3600
+	seconds_int = seconds_int % 3600
+	
+	minutes = seconds_int // 60
+	seconds_int = seconds_int % 60
+
+	return (str(hours), str(minutes), str(seconds_int))
+
+#no space after the string
 def generate_time(arg_string, hours, minutes, seconds):
-	return arg_string + " " + hours + ':' + minutes + ":"+ seconds
+	return arg_string + " " + hours + ':' + minutes + ":" + seconds
+
+def download_file(curr_file_name, yt_id, start_time, end_time, genre):
+	print ("Attempting to download ",curr_file_name," ...", end="", flush=True)
+	output_string = " --output \"" + curr_file_name + ".%(ext)s\""
+
+	start_hrs, start_mins, start_secs = seconds_to_full_time(start_time)
+	start_time_str = generate_time(start_time_arg, start_hrs, start_mins, start_secs)
+	
+	end_hrs, end_mins, end_secs = seconds_to_full_time(end_time)
+	end_time_str = generate_time(end_time_arg, end_hrs, end_mins, end_secs)
+
+	time_string = '"' + start_time_str + " "  + end_time_str + '"' 
+
+	full_command_string = youtube_dl_string + output_string + " --postprocessor-args " + time_string + ' '  + audio_format_string + " " + youtube_core_url + yt_id
+
+	completed_process = subprocess.run(full_command_string)
+
+	if (completed_process.returncode == 0):
+		label_count_dictionary[genre] = label_count_dictionary[genre] + 1
+		print("successfull")
 
 def maybe_download_files(input_file, output_dir):
-	return 0
+	with open(input_file) as csv_file:
+		csv_reader = csv.reader(csv_file, delimiter = ',')
+		curr_line = 0
+
+		for row in csv_reader:
+			if curr_line == 0:
+				curr_line = curr_line + 1
+			else:
+				# file name is outputdir/genre/id
+				curr_file_name = output_dir + '/' + row[4] + '/' + row[0] + ".wav"
+				if os.path.isfile(curr_file_name):
+					print("File", curr_file_name, "already exists.. skipping", flush = True)
+					label_count_dictionary[row[4]] = label_count_dictionary[row[4]] + 1
+					continue
+				download_file(curr_file_name, row[0], row[1], row[2], row[4])
 
 def main(argv):
 	input_file = ""
@@ -59,12 +107,13 @@ def main(argv):
 		elif opt == '-o':
 			output_dir = arg
 
-	if input_file == "":
+	if input_file == "" or not is_csv(input_file):
 		print_and_exit(help_msg, 2)
 
 	maybe_create_folders(output_dir)
 	populate_label_count_dictionary()
 	maybe_download_files(input_file, output_dir)
+	print(label_count_dictionary)
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
