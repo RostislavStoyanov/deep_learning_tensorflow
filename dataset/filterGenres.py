@@ -4,6 +4,7 @@ import sys, getopt
 help_msg = 'filterGenres.py -i <indiciesFile> -f <inputFile> -o <outputFile> - where indicies and input are csv files specifing information about the AudioSet'
 genres = ['Pop music', "Rock music", 'Hip hop music', 'Techno', 'Rhythm and blues', 'Vocal music', 'Reggae']
 
+#filter so it should be only genre - pure
 
 def print_and_exit(msg,exit_code):
 	print(msg)
@@ -28,8 +29,12 @@ def check_input_file(file_name):
 		return False
 
 	with open(file_name) as csv_file:
+		counter = 0
 		for line in csv_file:
-			return (line == '# Segments csv created Sun Mar  5 10:54:31 2017\n')
+			if counter < 2:
+				counter = counter + 1
+			else: 
+				return (line == '# YTID, start_seconds, end_seconds, positive_labels\n')
 
 	return False
 
