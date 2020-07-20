@@ -62,7 +62,7 @@ def main(argv):
 	main_dir = ""
 
 	try:
-		opts, _ = getopt.getopt(argv,"h:d:",["directory="])
+		opts, _ = getopt.getopt(argv,"h:d:",["main_dir="])
 	except:
 		print_and_exit(help_msg, 2)
 

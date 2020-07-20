@@ -81,7 +81,7 @@ def download_file(curr_file_name, yt_id, start_time, end_time, genre):
 	completed_process = subprocess.run(full_command_string, shell=True)
 
 	full_name = curr_file_name + ".wav"
-	print(full_name)
+	#print(full_name)
 	if (completed_process.returncode != 0 or exists_and_small(full_name)):
 		os.remove(full_name)
 
