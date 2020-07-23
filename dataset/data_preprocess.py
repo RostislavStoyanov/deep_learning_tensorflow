@@ -1,6 +1,7 @@
 import sys, getopt, os, pickle
 import numpy as np
 import librosa
+#from multiprocessing import Pool
 
 n_fft = 2048
 hop_length = 512
@@ -32,7 +33,7 @@ def create_spectogram(dir_to_browse, curr_pickle):
 		y, _ = librosa.load(dir_to_browse + '/' + file, sr = sr)
 		if(y.shape[0] < (10 * sr)):
 			y = add_padding(y)
-		spectogram = librosa.feature.melspectrogram(y = y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels, pad_mode="empty")
+		spectogram = librosa.feature.melspectrogram(y = y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
 		spectogram_pwr = librosa.power_to_db(spectogram, ref = np.max)
 
 		data[data_idx, :, :] = spectogram_pwr 
@@ -56,6 +57,8 @@ def maybe_create_spectograms(main_dir):
 			continue
 
 		dir_to_browse = main_dir + '/' + genre
+		#pool = Pool()
+		#pool.map(create_spectogram, dir_to_browse, curr_pickle)
 		create_spectogram(dir_to_browse, curr_pickle)
 
 def main(argv):

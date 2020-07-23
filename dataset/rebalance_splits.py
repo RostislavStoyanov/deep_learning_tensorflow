@@ -36,6 +36,24 @@ def print_stats(genre, train_files, valid_files, eval_files, total_files):
   print("Eval files:", len(eval_files))
   print("Files total:", total_files)
 
+
+def remove_not_wavs(dir_list):
+  for dir in dir_list:
+    files = os.listdir(dir)
+    for file in files:
+      if not (file[-4:] == '.wav'):
+        path_to_remove = dir + '/' + file
+        os.remove(path_to_remove)
+        print("Deleted", path_to_remove) 
+
+def remove_train_overlap(train_dir, other_dirs):
+  files = os.listdir(train_dir)
+  for file in files:
+    for dir in other_dirs:
+      curr_path = dir + '/' + file
+      if os.path.isfile(curr_path):
+        os.remove(curr_path)
+
 #rebalancding only works from train -> valid or eval
 def maybe_rebalance_splits(parent_dir):
   for genre in genres:
@@ -44,6 +62,8 @@ def maybe_rebalance_splits(parent_dir):
     curr_eval_path = parent_dir + "/eval/" + genre
     
     maybe_create_genre_subfolder([curr_train_path, curr_valid_path, curr_eval_path])
+    remove_train_overlap(curr_train_path, [curr_valid_path, curr_eval_path])
+    remove_not_wavs([curr_train_path, curr_valid_path, curr_eval_path])
 
     train_files = os.listdir(curr_train_path)
     valid_files = os.listdir(curr_valid_path)
