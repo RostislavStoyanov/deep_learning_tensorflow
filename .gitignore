@@ -1,5 +1,9 @@
 .vscode/*
+.history/
 
+#ignore downloaded dataset
 /dataset/data/*
 
-.history/
+#ignore pycache
+__pycache__
+/dataset/__pycache__

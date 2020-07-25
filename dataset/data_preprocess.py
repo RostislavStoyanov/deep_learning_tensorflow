@@ -1,17 +1,31 @@
 import sys, getopt, os, pickle
 import numpy as np
+import tensorflow as tf
 import librosa
-#from multiprocessing import Pool
 
-n_fft = 2048
-hop_length = 512
-n_mels = 128
-t = 431
-sr = 22050
+sys.path.insert(0,'..')
+from shared_variables import subdirectory_list, n_fft, n_mels, t, hop_length, sr, genres
 
 
 help_msg = 'data_preprocessing.py -d <dir>, where dir is the directory containing labeled sub-dirs in which the .wav files are located'
-genres = ['Pop music', "Rock music", 'Hip hop music', 'Techno', 'Rhythm and blues', 'Vocal music', 'Reggae']
+
+# The following functions can be used to convert a value to a type compatible
+# with tf.Example. https://www.tensorflow.org/tutorials/load_data/tfrecord#tfexample
+
+def _bytes_feature(value):
+  """Returns a bytes_list from a string / byte."""
+  if isinstance(value, type(tf.constant(0))):
+    value = value.numpy() # BytesList won't unpack a string from an EagerTensor.
+  return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+def _float_feature(value):
+  """Returns a float_list from a float / double."""
+  return tf.train.Feature(float_list=tf.train.FloatList(value=[value]))
+
+def _int64_feature(value):
+  """Returns an int64_list from a bool / enum / int / uint."""
+  return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+
 
 def print_and_exit(msg,exit_code):
 	print(msg)
@@ -23,11 +37,18 @@ def add_padding(array):
 
 	return padded
 
-def create_spectogram(dir_to_browse, curr_pickle):
+#https://www.tensorflow.org/tutorials/load_data/tfrecord#creating_a_tfexample_message
+def spectogram_to_example(spectogram, genre):
+	feature = {
+		'label': _int64_feature(genre),
+		'spectogram': _bytes_feature(spectogram)
+	}
+
+	return tf.train.Example(features = tf.train.Features(feature = feature))
+
+
+def create_spectogram(dir_to_browse, writer, genre):
 	files = os.listdir(dir_to_browse)
-	data = np.ndarray(shape=(len(files), n_mels, t),
-                         dtype=np.float32)
-	data_idx = 0
 
 	for file in files:
 		y, _ = librosa.load(dir_to_browse + '/' + file, sr = sr)
@@ -36,30 +57,30 @@ def create_spectogram(dir_to_browse, curr_pickle):
 		spectogram = librosa.feature.melspectrogram(y = y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
 		spectogram_pwr = librosa.power_to_db(spectogram, ref = np.max)
 
-		data[data_idx, :, :] = spectogram_pwr 
-		data_idx = data_idx + 1
+		spectogram_1d = np.reshape(spectogram_pwr, (n_mels * t)).tobytes()
+		example = spectogram_to_example(spectogram_1d, genre)
+		writer.write(example.SerializeToString())
 
-	try:
-		with open(curr_pickle, 'wb') as f:
-			print("Attempting to save", curr_pickle, end = "...")
-			pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
-			print("done")
-	except Exception as e:
-		print('Unable to save data to', curr_pickle, ':', e)
+
 
 #what if we already have the pickle but have updated the directory with the files -- this wont work correctly
 # better to first create the pickle and then compare with old one if such exists
 def maybe_create_spectograms(main_dir):
-	for genre in genres:
-		curr_pickle = main_dir + '/' + genre + ".pickle"
-		if os.path.isfile(curr_pickle):
-			print("File",curr_pickle,"already exists... skipping")
+	genre_map = dict((label, idx) for idx, label in enumerate(genres))
+
+	for subdir in subdirectory_list:
+		curr_tf_record_path = main_dir + '/' + subdir + '.tfrecord'
+		curr_subdir_path = main_dir + '/' + subdir
+		if os.path.isfile(curr_tf_record_path):
+			print(curr_tf_record_path, "already exists... skipping")
 			continue
 
-		dir_to_browse = main_dir + '/' + genre
-		#pool = Pool()
-		#pool.map(create_spectogram, dir_to_browse, curr_pickle)
-		create_spectogram(dir_to_browse, curr_pickle)
+		print("Writing to ", curr_tf_record_path, "... ", end = "", flush = True)
+		writer = tf.io.TFRecordWriter(path = curr_tf_record_path)
+		for genre in genres:
+			dir_to_browse = curr_subdir_path + '/' + genre
+			create_spectogram(dir_to_browse, writer, genre_map[genre])
+		print("done")
 
 def main(argv):
 	main_dir = ""
