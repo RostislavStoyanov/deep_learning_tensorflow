@@ -4,12 +4,14 @@ import random
 import shutil
 import math
 
+sys.path.insert(0,'..')
+from shared_variables import genres
+
 help_msg = 'rebalance_splits.py  -d <dir>, where dir is the directory containing the train, valid, eval subdirs'
-genres = ['Pop music', "Rock music", 'Hip hop music', 'Techno', 'Rhythm and blues', 'Vocal music', 'Reggae']
 
 eps = 1e-3
 
-def print_and_exit(msg,exit_code):
+def print_and_exit(msg, exit_code):
 	print(msg)
 	sys.exit(exit_code)
 
@@ -89,7 +91,7 @@ def main(argv):
   parent_dir = ""
 
   try:
-    opts, _ = getopt.getopt(argv,"h:d:",["parent_dir="])
+    opts, _ = getopt.getopt(argv, "h:d:",["parent_dir="])
   except:
     print_and_exit(help_msg,2)
 

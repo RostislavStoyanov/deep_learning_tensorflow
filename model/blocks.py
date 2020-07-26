@@ -108,9 +108,9 @@ class Inception_ResNet_A(keras.layers.Layer):
     br3 = self.br3_conv3.call(br3)
 
     concat = tf.concat([br1, br2, br3], -1, name = "incept_res_A_concat")
-    concat = self.concat_conv.call(concat)
+    concat = self.concat_conv.call(concat) * 0.1
     
-    summation = keras.layers.add([concat, inputs]) * 0.1
+    summation = keras.layers.add([concat, inputs])
     return tf.nn.relu(summation)
 
 class Inception_ResNet_B(keras.layers.Layer):
@@ -137,9 +137,9 @@ class Inception_ResNet_B(keras.layers.Layer):
       br2 = self.br2_conv3.call(br2)
 
       concat = tf.concat([br1, br2], -1, name = "incept_res_B_concat")
-      concat = self.concat_conv.call(concat)
+      concat = self.concat_conv.call(concat) * 0.1
 
-      summation = keras.layers.add([concat, inputs]) * 0.1
+      summation = keras.layers.add([concat, inputs])
       return tf.nn.relu(summation)
 
 class Inception_ResNet_C(keras.layers.Layer):
@@ -167,9 +167,9 @@ class Inception_ResNet_C(keras.layers.Layer):
     br2 = self.br2_conv3.call(br2)
 
     concat = tf.concat([br1, br2], -1, name = "incept_res_C_concat")
-    concat = self.concat_conv.call(concat)
+    concat = self.concat_conv.call(concat) * 0.1
 
-    summation = keras.layers.add([concat, inputs]) * 0.1
+    summation = keras.layers.add([concat, inputs])
     return tf.nn.relu(summation)
     
 
