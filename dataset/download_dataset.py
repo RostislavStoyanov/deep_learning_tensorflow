@@ -3,6 +3,9 @@ import sys, getopt
 import os, subprocess
 from concurrent.futures import ThreadPoolExecutor
 
+sys.path.insert(0,'..')
+from shared_func import print_and_exit
+
 help_msg = 'download_dataset.py -i <indiciesFile> -o <outputDir> - where indicies is csv file specifing information about the AudioSet, output is the folder'
 genres = ['Pop music', "Rock music", 'Hip hop music', 'Techno', 'Rhythm and blues', 'Vocal music', 'Reggae']
 
@@ -15,10 +18,6 @@ end_time_arg = "-to"
 audio_format_string = "-x --audio-format \"wav\""
 
 youtube_core_url = "https://www.youtube.com/watch?v="
-
-def print_and_exit(msg,exit_code):
-	print(msg)
-	sys.exit(exit_code)
 
 def is_csv(file_name):
 	return file_name[-4:] == '.csv'  

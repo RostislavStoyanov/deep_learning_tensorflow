@@ -4,7 +4,8 @@ import tensorflow as tf
 import librosa
 
 sys.path.insert(0,'..')
-from shared_variables import subdirectory_list, n_fft, n_mels, t, hop_length, sr, genres
+from global_vars import subdirectory_list, n_fft, n_mels, t, hop_length, sr, genres
+from shared_func import print_and_exit
 
 
 help_msg = 'data_preprocessing.py -d <dir>, where dir is the directory containing labeled sub-dirs in which the .wav files are located'
@@ -25,11 +26,6 @@ def _float_feature(value):
 def _int64_feature(value):
   """Returns an int64_list from a bool / enum / int / uint."""
   return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
-
-
-def print_and_exit(msg,exit_code):
-	print(msg)
-	sys.exit(exit_code)
 
 def add_padding(array):
 	padded = np.zeros((sr * 10))
@@ -60,7 +56,6 @@ def create_spectogram(dir_to_browse, writer, genre):
 		spectogram_1d = np.reshape(spectogram_pwr, (n_mels * t)).tobytes()
 		example = spectogram_to_example(spectogram_1d, genre)
 		writer.write(example.SerializeToString())
-
 
 
 #what if we already have the pickle but have updated the directory with the files -- this wont work correctly

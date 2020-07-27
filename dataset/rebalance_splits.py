@@ -5,15 +5,12 @@ import shutil
 import math
 
 sys.path.insert(0,'..')
-from shared_variables import genres
+from global_vars import genres
+from shared_func import print_and_exit
 
 help_msg = 'rebalance_splits.py  -d <dir>, where dir is the directory containing the train, valid, eval subdirs'
 
 eps = 1e-3
-
-def print_and_exit(msg, exit_code):
-	print(msg)
-	sys.exit(exit_code)
 
 def maybe_create_genre_subfolder(path_list):
   for path in path_list:
