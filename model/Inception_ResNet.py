@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
-from blocks import Stem, Inception_ResNet_A, Inception_ResNet_B, Inception_ResNet_C, ReductionA, ReductionB
+from .blocks import Stem, ReductionA, ReductionB, Inception_ResNet_A, Inception_ResNet_B, Inception_ResNet_C
 
 class Inception_ResNet(tf.keras.Model):
   def __init__(self):
