@@ -97,9 +97,12 @@ def train(data_dir, model_save_dir):
 
     for valid_batch in valid_dataset:
       valid_spectograms = valid_batch['spectogram'].numpy()
-      valid_genres = valid_batch['labels'].numpy()
+	  spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
+	  for i in range(valid_spectograms.shape[0]):
+        spectograms_reshaped[i] = np.frombuffer(spectograms[i], dtype=np.float32).reshape([n_mels, t, 1])
+      valid_genres = valid_batch['label'].numpy()
 
-      valid_step(valid_spectograms, valid_genres, net, loss_object, valid_loss, valid_acc)
+      valid_step(spectograms_reshaped, valid_genres, net, loss_object, valid_loss, valid_acc)
 
     with valid_summary_writer.as_default():
       tf.summary.scalar('loss', valid_loss.result(), step=epoch)
