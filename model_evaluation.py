@@ -34,7 +34,7 @@ def load_and_eval_model(path_to_model, data_dir):
     curr_batch_count = curr_batch_count + 1
 
     spectograms = batch['spectogram'].numpy()
-    genres = batch['labels'].numpy()
+    genres = batch['label'].numpy()
 
     predictions = net(spectograms, training = False)
     loss = loss_object(y_true = genres, y_pred = predictions)

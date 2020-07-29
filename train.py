@@ -24,7 +24,7 @@ def view_summary(model):
 
 @tf.function
 def train_step(spectogram_batch, genre_batch, model, loss_func, optimizer, train_loss, train_acc):
-  with tf.GradientTape as tape:
+  with tf.GradientTape() as tape:
     predictions = model(spectogram_batch, training = True)
     curr_loss = loss_func(y_true = genre_batch, y_pred = predictions)
   
@@ -45,7 +45,7 @@ def valid_step(spectogram_batch, genre_batch, model, loss_func, valid_loss, vali
 def train(data_dir, model_save_dir):
   train_dataset, valid_dataset = get_train_valid_datasets(data_dir)
 
-  net = Inception_ResNet.Inception_ResNet
+  net = Inception_ResNet.Inception_ResNet()
   view_summary(net)
 
   loss_object = keras.losses.SparseCategoricalCrossentropy()
@@ -57,7 +57,7 @@ def train(data_dir, model_save_dir):
   train_acc = keras.metrics.SparseCategoricalAccuracy(name = 'training_acc')
   valid_acc = keras.metrics.SparseCategoricalAccuracy(name = 'validation_acc')
 
-  train_batch_cnt = math.ceil(calc_dataset_size(train_dataset) / BATCH_SIZE)
+  train_batch_cnt = calc_dataset_size(train_dataset)
   best_valid_acc = -1.0
   
   for epoch in range(EPOCHS):
@@ -66,9 +66,15 @@ def train(data_dir, model_save_dir):
       curr_batch_count = curr_batch_count + 1
       
       spectograms = batch['spectogram'].numpy()
-      genres = batch['labels'].numpy()
+      spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
 
-      train_step(spectograms, genres, net, loss_object, optimizer, train_loss, train_acc)
+      for i in range(12):
+        spectograms_reshaped[i] = np.frombuffer(spectograms[i], dtype=np.float32).reshape([n_mels, t, 1])
+
+      #print(np.frombuffer(spectograms[0], dtype=np.float32).shape)
+      genres = batch['label'].numpy()
+
+      train_step(spectograms_reshaped, genres, net, loss_object, optimizer, train_loss, train_acc)
       print("------------------------")
       print("Epoch: {}/{}, batch:{}/{}, loss:{:.4f}, accuracy:{:4f}".format(epoch, EPOCHS,
                                                                       curr_batch_count, train_batch_cnt, 
@@ -101,8 +107,8 @@ def train(data_dir, model_save_dir):
   net.save_weights(filepath = model_save_dir + "training_end", save_format = 'tf')
 
 def main(argv):
-  data_dir = "/dataset/data"
-  model_save_dir = "/saved_model"
+  data_dir = "./dataset/data"
+  model_save_dir = "./saved_model"
 
   try:
     opts,_ = getopt.getopt(argv, "h:d:s:",["data_dir=, model_save_dir= "])
@@ -120,7 +126,7 @@ def main(argv):
   if (not os.path.isdir(data_dir)) or (not os.path.isdir(model_save_dir)):
     print_and_exit("Error while trying to open dirs...", 1)
 
-    train(data_dir, model_save_dir)
+  train(data_dir, model_save_dir)
     
 
 if __name__ == "__main__":

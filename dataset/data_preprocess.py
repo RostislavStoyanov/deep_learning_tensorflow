@@ -37,9 +37,8 @@ def add_padding(array):
 def spectogram_to_example(spectogram, genre):
 	feature = {
 		'label': _int64_feature(genre),
-		'spectogram': _bytes_feature(spectogram)
+		'spectogram': _bytes_feature(spectogram),
 	}
-
 	return tf.train.Example(features = tf.train.Features(feature = feature))
 
 

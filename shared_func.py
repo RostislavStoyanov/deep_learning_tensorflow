@@ -1,6 +1,7 @@
 import sys
 import tensorflow as tf
 from global_vars import n_mels, t, BATCH_SIZE
+import numpy as np
 
 def print_and_exit(msg, exit_code):
 	print(msg)
@@ -9,9 +10,8 @@ def print_and_exit(msg, exit_code):
 def decode_record(record):
   example = tf.io.parse_single_example(record, {
     'label': tf.io.FixedLenFeature([], tf.dtypes.int64),
-    'spectogram': tf.io.FixedLenFeature([], tf.dtypes.string)
+    'spectogram': tf.io.FixedLenFeature([], tf.dtypes.string),
   })
-  example['spectogram'] = tf.reshape(example['spectogram'], [n_mels, t])
 
   return example
 
