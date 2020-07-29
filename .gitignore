@@ -7,3 +7,5 @@
 #ignore pycache
 __pycache__
 /dataset/__pycache__
+
+/logs/gradient_tape/*

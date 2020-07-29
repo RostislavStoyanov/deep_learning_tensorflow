@@ -4,6 +4,7 @@ import sys, getopt
 import os
 import math
 import numpy as np
+import datetime
 
 from global_vars import genres, n_mels, t, BATCH_SIZE, EPOCHS, LEARNING_RATE, EPSILON
 from shared_func import print_and_exit, calc_dataset_size, get_dataset
@@ -61,6 +62,13 @@ def train(data_dir, model_save_dir):
 
   train_batch_cnt = calc_dataset_size(train_dataset)
   best_valid_acc = -1.0
+
+  current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+  train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
+  valid_log_dir = 'logs/gradient_tape/' + current_time + '/valid'
+  train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+  valid_summary_writer = tf.summary.create_file_writer(valid_log_dir)
+
   
   for epoch in range(EPOCHS):
     curr_batch_count = 0
@@ -70,7 +78,7 @@ def train(data_dir, model_save_dir):
       spectograms = batch['spectogram'].numpy()
       spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
 
-      for i in range(12):
+      for i in range(spectograms.shape[0]):
         spectograms_reshaped[i] = np.frombuffer(spectograms[i], dtype=np.float32).reshape([n_mels, t, 1])
 
       #print(np.frombuffer(spectograms[0], dtype=np.float32).shape)
@@ -82,6 +90,10 @@ def train(data_dir, model_save_dir):
                                                                       curr_batch_count, train_batch_cnt, 
                                                                       train_loss.result().numpy(), train_acc.result().numpy()))
       print("------------------------")
+      with train_summary_writer.as_default():
+        tf.summary.scalar('loss', train_loss.result(), step=epoch)
+        tf.summary.scalar('accuracy', train_acc.result(), step=epoch)
+
 
     for valid_batch in valid_dataset:
       valid_spectograms = valid_batch['spectogram'].numpy()
@@ -89,6 +101,10 @@ def train(data_dir, model_save_dir):
 
       valid_step(valid_spectograms, valid_genres, net, loss_object, valid_loss, valid_acc)
 
+    with valid_summary_writer.as_default():
+      tf.summary.scalar('loss', valid_loss.result(), step=epoch)
+      tf.summary.scalar('accuracy', valid_acc.result(), step=epoch)
+ 
     print("##########################")
     print("Epoch: {}/{}, train_loss:{:4f}, valid_loss:{:4f}, \n train_acc:{:.4f}, valid_acc:{:4f}".format(epoch, EPOCHS,
                                                                       train_loss.result().numpy(), valid_loss.result().numpy(), 
