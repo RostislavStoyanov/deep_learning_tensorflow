@@ -40,6 +40,8 @@ def train_step(spectogram_batch, genre_batch, model, loss_func, optimizer, train
 @tf.function
 def valid_step(spectogram_batch, genre_batch, model, loss_func, valid_loss, valid_acc):
   predictions = model(spectogram_batch, training = False)
+  if(genre_batch.shape[0] != predictions.shape[0]):
+    return
   val_loss = loss_func(y_true = genre_batch, y_pred = predictions)
 
   valid_loss.update_state(values = val_loss)
@@ -97,9 +99,9 @@ def train(data_dir, model_save_dir):
 
     for valid_batch in valid_dataset:
       valid_spectograms = valid_batch['spectogram'].numpy()
-	  spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
-	  for i in range(valid_spectograms.shape[0]):
-        spectograms_reshaped[i] = np.frombuffer(spectograms[i], dtype=np.float32).reshape([n_mels, t, 1])
+      spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
+      for i in range(valid_spectograms.shape[0]):
+        spectograms_reshaped[i] = np.frombuffer(valid_spectograms[i], dtype=np.float32).reshape([n_mels, t, 1])
       valid_genres = valid_batch['label'].numpy()
 
       valid_step(spectograms_reshaped, valid_genres, net, loss_object, valid_loss, valid_acc)
