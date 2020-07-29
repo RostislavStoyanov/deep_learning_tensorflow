@@ -26,6 +26,8 @@ def view_summary(model):
 def train_step(spectogram_batch, genre_batch, model, loss_func, optimizer, train_loss, train_acc):
   with tf.GradientTape() as tape:
     predictions = model(spectogram_batch, training = True)
+    if(genre_batch.shape[0] != predictions.shape[0]):
+      return
     curr_loss = loss_func(y_true = genre_batch, y_pred = predictions)
   
   gradients = tape.gradient(curr_loss ,model.trainable_variables)
