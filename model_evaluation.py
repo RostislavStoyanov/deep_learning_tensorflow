@@ -19,7 +19,7 @@ def get_eval_dataset(data_dir):
 def load_and_eval_model(path_to_model, data_dir):
   eval_dataset = get_eval_dataset(data_dir)
 
-  net = Inception_ResNet.Inception_ResNet
+  net = Inception_ResNet.Inception_ResNet()
   net.load_weights(filepath = path_to_model)
 
   loss_object = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
@@ -54,7 +54,7 @@ def load_and_eval_model(path_to_model, data_dir):
 
 def main(argv):
   path_to_model = ""
-  data_dir = "/dataset/data"
+  data_dir = "./dataset/data"
 
   try:
     opts, _ = getopt.getopt(argv, "h:d:p:",["data_dir=, path="])
@@ -68,7 +68,7 @@ def main(argv):
       path_to_model = arg
   
 
-  if (path_to_model == '' or not os.path.isfile(path_to_model) or not os.path.isdir(data_dir)):
+  if (path_to_model == '' or not os.path.isdir(data_dir) or not os.path.isfile(path_to_model)):
     print_and_exit("Check path... ", 1)
 
   load_and_eval_model(path_to_model, data_dir)  
