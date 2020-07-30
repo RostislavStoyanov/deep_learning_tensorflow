@@ -68,7 +68,7 @@ def main(argv):
       path_to_model = arg
   
 
-  if (path_to_model == '' or not os.path.isdir(path_to_model) or not os.path.isdir(data_dir)):
+  if (path_to_model == '' or not os.path.isfile(path_to_model) or not os.path.isdir(data_dir)):
     print_and_exit("Check path... ", 1)
 
   load_and_eval_model(path_to_model, data_dir)  

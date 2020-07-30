@@ -52,7 +52,7 @@ def train(data_dir, model_save_dir):
   view_summary(net)
 
   loss_object = keras.losses.SparseCategoricalCrossentropy()
-  optimizer = keras.optimizers.RMSprop(learning_rate = LEARNING_RATE, epsilon = EPSILON, decay = 0.94 / (2 * EPOCHS))
+  optimizer = keras.optimizers.Adam()
 
   train_loss = keras.metrics.Mean(name = 'training_loss')
   valid_loss = keras.metrics.Mean(name = 'validation_loss')
@@ -66,6 +66,8 @@ def train(data_dir, model_save_dir):
   current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
   train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
   valid_log_dir = 'logs/gradient_tape/' + current_time + '/valid'
+  curr_save_dir = model_save_dir + '/' + current_time
+  
   train_summary_writer = tf.summary.create_file_writer(train_log_dir)
   valid_summary_writer = tf.summary.create_file_writer(valid_log_dir)
 
@@ -97,8 +99,8 @@ def train(data_dir, model_save_dir):
 
     for valid_batch in valid_dataset:
       valid_spectograms = valid_batch['spectogram'].numpy()
-	  spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
-	  for i in range(valid_spectograms.shape[0]):
+      spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
+      for i in range(valid_spectograms.shape[0]):
         spectograms_reshaped[i] = np.frombuffer(spectograms[i], dtype=np.float32).reshape([n_mels, t, 1])
       valid_genres = valid_batch['label'].numpy()
 
@@ -114,10 +116,10 @@ def train(data_dir, model_save_dir):
                                                                       train_acc.result().numpy(), valid_acc.result().numpy()))
     print("##########################")
 
-    if(best_valid_acc == -1.0 or np.isclose(train_acc.result().numpy(),best_valid_acc)):
+    if(best_valid_acc == -1.0 or best_valid_acc <= (valid_acc.result().numpy() - 1e5)):
       best_valid_acc = train_acc.result().numpy()
       print("Saving net with valid_acc = ", best_valid_acc)
-      net.save_weights(filepath = model_save_dir + "curr_best_model", save_format = 'tf')
+      net.save_weights(filepath = curr_save_dir + "best_model", save_format = 'tf')
 
     train_loss.reset_states()
     valid_loss.reset_states()
