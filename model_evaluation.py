@@ -3,10 +3,11 @@ from tensorflow import keras
 import sys, getopt
 import os
 import math
+import numpy as np
 
 from model import Inception_ResNet
 
-from global_vars import BATCH_SIZE
+from global_vars import BATCH_SIZE, n_mels, t
 from shared_func import print_and_exit, get_dataset, calc_dataset_size
 
 help_msg = "model_evaluation.py -d <data_dir> -p <path>, where path points to a saved model and dir points to dir contaiing eval tfrecord"
@@ -27,16 +28,24 @@ def load_and_eval_model(path_to_model, data_dir):
   eval_loss = keras.metrics.Mean(name = 'eval_loss')
   eval_acc = keras.metrics.SparseCategoricalAccuracy(name = 'eval_acc')
 
-  eval_batch_cnt = math.ceil(calc_dataset_size(eval_dataset) / BATCH_SIZE)
+  eval_batch_cnt = calc_dataset_size(eval_dataset)
   curr_batch_count = 0
 
   for batch in eval_dataset:
     curr_batch_count = curr_batch_count + 1
 
+    spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
+
     spectograms = batch['spectogram'].numpy()
     genres = batch['label'].numpy()
+    if(spectograms.shape[0] != genres.shape[0]):
+      print("Shape mismatch")
+      continue
 
-    predictions = net(spectograms, training = False)
+    for i in range(spectograms.shape[0]):
+      spectograms_reshaped[i] = np.frombuffer(spectograms[i], dtype=np.float32).reshape([n_mels, t, 1])
+
+    predictions = net(spectograms_reshaped, training = False)
     loss = loss_object(y_true = genres, y_pred = predictions)
     
     eval_loss.update_state(values = loss)

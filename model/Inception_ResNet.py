@@ -22,7 +22,7 @@ class Inception_ResNet(tf.keras.Model):
     self.dropout = keras.layers.Dropout(rate = 0.2)
     self.flat = keras.layers.Flatten()
     self.dense = keras.layers.Dense(units = 1500, activation = keras.activations.relu)
-    self.dropout2 = keras.layers.Dropout(rate = 0.3)
+    self.dropout2 = keras.layers.Dropout(rate = 0.6)
     self.softmax = keras.layers.Dense(units = 7, activation = keras.activations.softmax) 
   
 #stack multiple resnet blocks

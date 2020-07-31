@@ -118,10 +118,10 @@ def train(data_dir, model_save_dir):
                                                                       train_acc.result().numpy(), valid_acc.result().numpy()))
     print("##########################")
 
-    if(best_valid_acc == -1.0 or best_valid_acc <= (valid_acc.result().numpy() - 1e5)):
+    if(best_valid_acc == -1.0 or valid_acc.result().numpy() <= (best_valid_acc - 1e5)):
       best_valid_acc = train_acc.result().numpy()
       print("Saving net with valid_acc = ", best_valid_acc)
-      net.save_weights(filepath = curr_save_dir + "best_model", save_format = 'tf')
+      net.save_weights(filepath = curr_save_dir + "/best_model/", save_format = 'tf')
 
     train_loss.reset_states()
     valid_loss.reset_states()
@@ -129,7 +129,7 @@ def train(data_dir, model_save_dir):
     valid_acc.reset_states()
   
   print("Saving final net")
-  net.save_weights(filepath = model_save_dir + "training_end", save_format = 'tf')
+  net.save_weights(filepath = curr_save_dir + "/training_end/", save_format = 'tf')
 
 def main(argv):
   data_dir = "./dataset/data"
