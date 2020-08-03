@@ -9,7 +9,7 @@ import datetime
 from global_vars import genres, n_mels, t, BATCH_SIZE, EPOCHS, LEARNING_RATE, EPSILON
 from shared_func import print_and_exit, calc_dataset_size, get_dataset
 
-from model import Inception_ResNet
+from model import Inception_ResNet, ResNet
 
 help_msg = 'train.py -d <data_dir> -s <model_save_dir>'
 
@@ -50,11 +50,11 @@ def valid_step(spectogram_batch, genre_batch, model, loss_func, valid_loss, vali
 def train(data_dir, model_save_dir):
   train_dataset, valid_dataset = get_train_valid_datasets(data_dir)
 
-  net = Inception_ResNet.Inception_ResNet()
+  net = ResNet.ResNet()
   view_summary(net)
 
   loss_object = keras.losses.SparseCategoricalCrossentropy()
-  optimizer = keras.optimizers.Adam()
+  optimizer = keras.optimizers.SGD(learning_rate = 0.005)
 
   train_loss = keras.metrics.Mean(name = 'training_loss')
   valid_loss = keras.metrics.Mean(name = 'validation_loss')
@@ -119,7 +119,7 @@ def train(data_dir, model_save_dir):
     print("##########################")
 
     if(best_valid_acc == -1.0 or valid_acc.result().numpy() <= (best_valid_acc - 1e5)):
-      best_valid_acc = train_acc.result().numpy()
+      best_valid_acc = valid_acc.result().numpy()
       print("Saving net with valid_acc = ", best_valid_acc)
       net.save_weights(filepath = curr_save_dir + "/best_model/", save_format = 'tf')
 

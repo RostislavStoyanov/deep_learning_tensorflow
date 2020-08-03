@@ -14,7 +14,7 @@ class Conv2D_BatchNorm(keras.layers.Layer):
 
   def call(self, inputs, training = None):
     conv = self.conv2d(inputs, training = training)
-    conv_batch = self.batch_norm(conv, training = True)
+    conv_batch = self.batch_norm(conv, training = training)
 
     return conv_batch
 
@@ -241,3 +241,28 @@ class ReductionB(keras.layers.Layer):
     br4 = self.br4_conv3.call(br4, training)
 
     return tf.concat([br1, br2, br3, br4], -1, name = "reductionB_concat")
+
+class ResidualBlock(keras.layers.Layer):
+  def __init__(self, filter_cnt, stride = 1):
+    super(ResidualBlock, self).__init__()
+
+    self.conv_batch_norm1 = Conv2D_BatchNorm(filters = filter_cnt, kernel_size = (1,1),
+                            strides = 1, padding = 'same', activation = None)
+    self.conv_batch_norm2 = Conv2D_BatchNorm(filters = filter_cnt, kernel_size = (3,3),
+                            strides = stride, padding = 'same', activation = None)
+    self.conv_batch_norm3 = Conv2D_BatchNorm(filters = 4 * filter_cnt, kernel_size = (1,1),
+                            strides = 1, padding = 'same', activation = None)
+    
+    self.res_downsample = keras.Sequential()
+    self.res_downsample.add(Conv2D_BatchNorm(filters = 4 * filter_cnt, kernel_size = (1,1),
+                            strides = stride, padding = 'valid', activation = None))
+
+  def call(self, inputs, training = None):
+    res = self.res_downsample(inputs, training = training)
+
+    convs = self.conv_batch_norm1.call(inputs, training)
+    convs = self.conv_batch_norm2.call(convs, training)
+    convs = self.conv_batch_norm3.call(convs, training)
+
+    summation = keras.layers.add([res, convs])
+    return tf.nn.relu(summation)
