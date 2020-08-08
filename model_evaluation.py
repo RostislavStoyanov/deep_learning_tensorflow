@@ -39,7 +39,7 @@ def load_and_eval_model(path_to_model, data_dir):
     spectograms = batch['spectogram'].numpy()
     genres = batch['label'].numpy()
     if(spectograms.shape[0] != genres.shape[0]):
-      print("Shape mismatch")
+      print("Shape mismatch..")
       continue
 
     for i in range(spectograms.shape[0]):
@@ -48,8 +48,8 @@ def load_and_eval_model(path_to_model, data_dir):
     predictions = net(spectograms_reshaped, training = False)
     loss = loss_object(y_true = genres, y_pred = predictions)
     
-    eval_loss.update_state(values = loss)
-    eval_acc.update_state(y_true = genres, y_pred = predictions)
+    eval_loss(loss)
+    eval_acc(genres, predictions)
     
     print("------------------------")
     print("Batch:{}/{}, loss:{:4f}, acc:{:4f}".format(curr_batch_count, eval_batch_cnt, 

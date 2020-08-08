@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 from .blocks import ResidualBlock, Conv2D_BatchNorm
 
-class ResNet(tf.keras.Model):
+class ResNet(keras.Model):
   def __init__(self):
     super(ResNet, self).__init__()
 

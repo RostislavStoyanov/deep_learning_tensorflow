@@ -9,7 +9,7 @@ import datetime
 from global_vars import genres, n_mels, t, BATCH_SIZE, EPOCHS, LEARNING_RATE, EPSILON
 from shared_func import print_and_exit, calc_dataset_size, get_dataset
 
-from model import Inception_ResNet, ResNet
+from model import Inception_ResNet, ResNet, CNN
 
 help_msg = 'train.py -d <data_dir> -s <model_save_dir>'
 
@@ -20,8 +20,8 @@ def get_train_valid_datasets(data_dir):
   return get_dataset(train_tfrecord_path), get_dataset(valid_tfrecord_path)
 
 def view_summary(model):
-  model.build(input_shape = (None, n_mels, t, 1))
-  model.summary()
+  #model.build(input_shape = (None, n_mels, t, 1))
+  model.model().summary()
 
 @tf.function
 def train_step(spectogram_batch, genre_batch, model, loss_func, optimizer, train_loss, train_acc):
@@ -50,11 +50,11 @@ def valid_step(spectogram_batch, genre_batch, model, loss_func, valid_loss, vali
 def train(data_dir, model_save_dir):
   train_dataset, valid_dataset = get_train_valid_datasets(data_dir)
 
-  net = ResNet.ResNet()
+  net = CNN.CNN()
   view_summary(net)
 
   loss_object = keras.losses.SparseCategoricalCrossentropy()
-  optimizer = keras.optimizers.SGD(learning_rate = 0.005)
+  optimizer = keras.optimizers.Adam()
 
   train_loss = keras.metrics.Mean(name = 'training_loss')
   valid_loss = keras.metrics.Mean(name = 'validation_loss')
@@ -66,8 +66,8 @@ def train(data_dir, model_save_dir):
   best_valid_acc = -1.0
 
   current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-  train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
-  valid_log_dir = 'logs/gradient_tape/' + current_time + '/valid'
+  train_log_dir = './logs/gradient_tape/' + current_time + '/train'
+  valid_log_dir = './logs/gradient_tape/' + current_time + '/valid'
   curr_save_dir = model_save_dir + '/' + current_time
   
   train_summary_writer = tf.summary.create_file_writer(train_log_dir)
