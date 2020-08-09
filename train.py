@@ -58,10 +58,12 @@ def update_validation(valid_dataset, net, loss_object, valid_loss, valid_acc):
     valid_step(spectograms_reshaped, valid_genres, net, loss_object, valid_loss, valid_acc)
 
 def save_net_if_better(save_dir, net, best_valid_acc, valid_acc):
-  if(best_valid_acc == -1.0 or valid_acc.result().numpy() <= (best_valid_acc - 1e-5)):
-    best_valid_acc = valid_acc.result().numpy()
-    print("Saving net with valid_acc = ", best_valid_acc)
+  if(best_valid_acc == -1.0 or valid_acc.result().numpy() <= (best_valid_acc - 1e-9)):
+    new_valid_acc = valid_acc.result().numpy()
+    print("Saving net with valid_acc = ", new_valid_acc)
     net.save_weights(filepath = save_dir + "/best_model/", save_format = 'tf')
+
+  return new_valid_acc
 
 def stop_training(valid_acc, prev_valid_accs):
   if len(prev_valid_accs) < 10:
@@ -137,7 +139,7 @@ def train(data_dir, model_save_dir):
                                                                       train_acc.result().numpy(), valid_acc.result().numpy()))
       print("------------------------")
 
-      save_net_if_better(curr_save_dir, net, best_valid_acc, valid_acc)
+      best_valid_acc = save_net_if_better(curr_save_dir, net, best_valid_acc, valid_acc)
 
       if stop_training(valid_acc, prev_valid_accs):
         stop_flag = True
