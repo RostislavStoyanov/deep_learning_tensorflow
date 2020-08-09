@@ -60,7 +60,7 @@ def update_validation(valid_dataset, net, loss_object, valid_loss, valid_acc):
 def save_net_if_better(save_dir, net, best_valid_acc, valid_acc):
   if(best_valid_acc == -1.0 or valid_acc.result().numpy() <= (best_valid_acc - 1e-9)):
     best_valid_acc = valid_acc.result().numpy()
-    print("Saving net with valid_acc = ", best_valid_acc)
+    print("!!! Saving net with valid_acc = ", best_valid_acc, flush = True)
     net.save_weights(filepath = save_dir + "/best_model/", save_format = 'tf')
 
   return best_valid_acc
