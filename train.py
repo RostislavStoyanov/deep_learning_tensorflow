@@ -65,12 +65,8 @@ def save_net_if_better(save_dir, net, best_valid_acc, valid_acc):
 
   return best_valid_acc
 
-def stop_training(valid_acc, prev_valid_accs):
-  if len(prev_valid_accs) < 10:
-    return False
-  
-  min_acc = min(prev_valid_accs[-10:])
-  return valid_acc.result().numpy() < min_acc - 1e-5
+def stop_training(valid_loss, prev_loss):
+  return valid_loss > (prev_loss.result().numpy() + 1e-3)
 
 def train(data_dir, model_save_dir):
   train_dataset, valid_dataset = get_train_valid_datasets(data_dir)
@@ -98,17 +94,11 @@ def train(data_dir, model_save_dir):
   train_summary_writer = tf.summary.create_file_writer(train_log_dir)
   valid_summary_writer = tf.summary.create_file_writer(valid_log_dir)
 
-  
+  prev_loss = None
   for epoch in range(EPOCHS):
     curr_batch_count = 0
-    prev_valid_accs = []
-    stop_flag = False
 
     for batch in train_dataset:
-      #flag has been set last epoch to indicate we have overfitting
-      if stop_flag:
-        break
-
       curr_batch_count = curr_batch_count + 1
       
       spectograms = batch['spectogram'].numpy()
@@ -126,30 +116,35 @@ def train(data_dir, model_save_dir):
         tf.summary.scalar('loss', train_loss.result(), step=epoch * curr_batch_count)
         tf.summary.scalar('accuracy', train_acc.result(), step=epoch * curr_batch_count)
       
-      update_validation(valid_dataset, net, loss_object, valid_loss, valid_acc)
-      prev_valid_accs.append(valid_acc.result().numpy())
-      with valid_summary_writer.as_default():
-        tf.summary.scalar('loss', valid_loss.result(), step=curr_batch_count * epoch)
-        tf.summary.scalar('accuracy', valid_acc.result(), step=curr_batch_count * epoch)
-    
       print("------------------------")
-      print("Epoch: {}/{}, batch:{}/{}, loss:{:.4f}, valid_loss:{:.4f} \n accuracy:{:.4f}, valid_acc:{:.4f}".format(epoch, EPOCHS,
+      print("Epoch: {}/{}, batch:{}/{}, loss:{:.4f}, accuracy:{:.4f}".format(epoch, EPOCHS,
                                                                       curr_batch_count, train_batch_cnt, 
-                                                                      train_loss.result().numpy(), valid_loss.result().numpy(), 
-                                                                      train_acc.result().numpy(), valid_acc.result().numpy()))
+                                                                      train_loss.result().numpy(), 
+                                                                      train_acc.result().numpy(), ))
       print("------------------------")
 
-      best_valid_acc = save_net_if_better(curr_save_dir, net, best_valid_acc, valid_acc)
+      
 
-      if stop_training(valid_acc, prev_valid_accs):
-        stop_flag = True
-        break
- 
+
+    update_validation(valid_dataset, net, loss_object, valid_loss, valid_acc)
+    best_valid_acc = save_net_if_better(curr_save_dir, net, best_valid_acc, valid_acc)
+    
+
+    with valid_summary_writer.as_default():
+      tf.summary.scalar('loss', valid_loss.result(), step= epoch)
+      tf.summary.scalar('accuracy', valid_acc.result(), step=epoch)
+
     print("##########################")
     print("Epoch: {}/{}, train_loss:{:4f}, valid_loss:{:4f}, \n train_acc:{:.4f}, valid_acc:{:4f}".format(epoch, EPOCHS,
                                                                       train_loss.result().numpy(), valid_loss.result().numpy(), 
                                                                       train_acc.result().numpy(), valid_acc.result().numpy()))
     print("##########################")
+
+    if stop_training(valid_loss, prev_loss):
+      print("Stopping training at epoch ", epoch)
+      break
+    prev_loss = valid_loss.result().numpy()
+
     train_loss.reset_states()
     valid_loss.reset_states()
     train_acc.reset_states()
