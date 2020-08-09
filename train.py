@@ -47,6 +47,29 @@ def valid_step(spectogram_batch, genre_batch, model, loss_func, valid_loss, vali
   valid_loss.update_state(values = val_loss)
   valid_acc.update_state(y_true = genre_batch , y_pred = predictions)
 
+def update_validation(valid_dataset, net, loss_object, valid_loss, valid_acc):
+  for valid_batch in valid_dataset:
+    valid_spectograms = valid_batch['spectogram'].numpy()
+    spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
+    for i in range(valid_spectograms.shape[0]):
+      spectograms_reshaped[i] = np.frombuffer(valid_spectograms[i], dtype=np.float32).reshape([n_mels, t, 1])
+    valid_genres = valid_batch['label'].numpy()
+
+    valid_step(spectograms_reshaped, valid_genres, net, loss_object, valid_loss, valid_acc)
+
+def save_net_if_better(save_dir, net, best_valid_acc, valid_acc):
+  if(best_valid_acc == -1.0 or valid_acc.result().numpy() <= (best_valid_acc - 1e-5)):
+    best_valid_acc = valid_acc.result().numpy()
+    print("Saving net with valid_acc = ", best_valid_acc)
+    net.save_weights(filepath = save_dir + "/best_model/", save_format = 'tf')
+
+def stop_training(valid_acc, prev_valid_accs):
+  if len(prev_valid_accs) < 10:
+    return False
+  
+  min_acc = min(prev_valid_accs[-10:])
+  return valid_acc.result().numpy() < min_acc - 1e-5
+
 def train(data_dir, model_save_dir):
   train_dataset, valid_dataset = get_train_valid_datasets(data_dir)
 
@@ -76,7 +99,14 @@ def train(data_dir, model_save_dir):
   
   for epoch in range(EPOCHS):
     curr_batch_count = 0
+    prev_valid_accs = []
+    stop_flag = False
+
     for batch in train_dataset:
+      #flag has been set last epoch to indicate we have overfitting
+      if stop_flag:
+        break
+
       curr_batch_count = curr_batch_count + 1
       
       spectograms = batch['spectogram'].numpy()
@@ -89,40 +119,35 @@ def train(data_dir, model_save_dir):
       genres = batch['label'].numpy()
 
       train_step(spectograms_reshaped, genres, net, loss_object, optimizer, train_loss, train_acc)
-      print("------------------------")
-      print("Epoch: {}/{}, batch:{}/{}, loss:{:.4f}, accuracy:{:4f}".format(epoch, EPOCHS,
-                                                                      curr_batch_count, train_batch_cnt, 
-                                                                      train_loss.result().numpy(), train_acc.result().numpy()))
-      print("------------------------")
+
       with train_summary_writer.as_default():
-        tf.summary.scalar('loss', train_loss.result(), step=epoch)
-        tf.summary.scalar('accuracy', train_acc.result(), step=epoch)
+        tf.summary.scalar('loss', train_loss.result(), step=epoch * curr_batch_count)
+        tf.summary.scalar('accuracy', train_acc.result(), step=epoch * curr_batch_count)
+      
+      update_validation(valid_dataset, net, loss_object, valid_loss, valid_acc)
+      prev_valid_accs.append(valid_acc.result().numpy())
+      with valid_summary_writer.as_default():
+        tf.summary.scalar('loss', valid_loss.result(), step=curr_batch_count * epoch)
+        tf.summary.scalar('accuracy', valid_acc.result(), step=curr_batch_count * epoch)
+    
+      print("------------------------")
+      print("Epoch: {}/{}, batch:{}/{}, loss:{:.4f}, valid_loss:{:.4f} \n accuracy:{:.4f}, valid_acc{:.4f}".format(epoch, EPOCHS,
+                                                                      curr_batch_count, train_batch_cnt, 
+                                                                      train_loss.result().numpy(), valid_loss.result().numpy(), 
+                                                                      train_acc.result().numpy(), valid_acc.result().numpy()))
+      print("------------------------")
 
+      save_net_if_better(curr_save_dir, net, best_valid_acc, valid_acc)
 
-    for valid_batch in valid_dataset:
-      valid_spectograms = valid_batch['spectogram'].numpy()
-      spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
-      for i in range(valid_spectograms.shape[0]):
-        spectograms_reshaped[i] = np.frombuffer(valid_spectograms[i], dtype=np.float32).reshape([n_mels, t, 1])
-      valid_genres = valid_batch['label'].numpy()
-
-      valid_step(spectograms_reshaped, valid_genres, net, loss_object, valid_loss, valid_acc)
-
-    with valid_summary_writer.as_default():
-      tf.summary.scalar('loss', valid_loss.result(), step=epoch)
-      tf.summary.scalar('accuracy', valid_acc.result(), step=epoch)
+      if stop_training(valid_acc, prev_valid_accs):
+        stop_flag = True
+        break
  
     print("##########################")
     print("Epoch: {}/{}, train_loss:{:4f}, valid_loss:{:4f}, \n train_acc:{:.4f}, valid_acc:{:4f}".format(epoch, EPOCHS,
                                                                       train_loss.result().numpy(), valid_loss.result().numpy(), 
                                                                       train_acc.result().numpy(), valid_acc.result().numpy()))
     print("##########################")
-
-    if(best_valid_acc == -1.0 or valid_acc.result().numpy() <= (best_valid_acc - 1e5)):
-      best_valid_acc = valid_acc.result().numpy()
-      print("Saving net with valid_acc = ", best_valid_acc)
-      net.save_weights(filepath = curr_save_dir + "/best_model/", save_format = 'tf')
-
     train_loss.reset_states()
     valid_loss.reset_states()
     train_acc.reset_states()
