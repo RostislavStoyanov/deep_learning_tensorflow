@@ -59,11 +59,11 @@ def update_validation(valid_dataset, net, loss_object, valid_loss, valid_acc):
 
 def save_net_if_better(save_dir, net, best_valid_acc, valid_acc):
   if(best_valid_acc == -1.0 or valid_acc.result().numpy() <= (best_valid_acc - 1e-9)):
-    new_valid_acc = valid_acc.result().numpy()
-    print("Saving net with valid_acc = ", new_valid_acc)
+    best_valid_acc = valid_acc.result().numpy()
+    print("Saving net with valid_acc = ", best_valid_acc)
     net.save_weights(filepath = save_dir + "/best_model/", save_format = 'tf')
 
-  return new_valid_acc
+  return best_valid_acc
 
 def stop_training(valid_acc, prev_valid_accs):
   if len(prev_valid_accs) < 10:
@@ -133,7 +133,7 @@ def train(data_dir, model_save_dir):
         tf.summary.scalar('accuracy', valid_acc.result(), step=curr_batch_count * epoch)
     
       print("------------------------")
-      print("Epoch: {}/{}, batch:{}/{}, loss:{:.4f}, valid_loss:{:.4f} \n accuracy:{:.4f}, valid_acc{:.4f}".format(epoch, EPOCHS,
+      print("Epoch: {}/{}, batch:{}/{}, loss:{:.4f}, valid_loss:{:.4f} \n accuracy:{:.4f}, valid_acc:{:.4f}".format(epoch, EPOCHS,
                                                                       curr_batch_count, train_batch_cnt, 
                                                                       train_loss.result().numpy(), valid_loss.result().numpy(), 
                                                                       train_acc.result().numpy(), valid_acc.result().numpy()))
