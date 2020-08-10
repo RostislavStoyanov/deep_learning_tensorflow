@@ -5,7 +5,7 @@ import os
 import math
 import numpy as np
 
-from model import Inception_ResNet
+from model import Inception_ResNet, CNN, ResNet
 
 from global_vars import BATCH_SIZE, n_mels, t
 from shared_func import print_and_exit, get_dataset, calc_dataset_size
@@ -20,7 +20,7 @@ def get_eval_dataset(data_dir):
 def load_and_eval_model(path_to_model, data_dir):
   eval_dataset = get_eval_dataset(data_dir)
 
-  net = Inception_ResNet.Inception_ResNet()
+  net = CNN.CNN()
   net.load_weights(filepath = path_to_model)
 
   loss_object = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
