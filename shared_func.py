@@ -28,3 +28,8 @@ def get_dataset(path):
   dataset = dataset.shuffle(size).map(decode_record)
 
   return dataset.batch(BATCH_SIZE)
+
+def get_dataset_no_shuffle(path):
+  dataset = tf.data.TFRecordDataset(path).map(decode_record)
+
+  return dataset.batch(BATCH_SIZE)

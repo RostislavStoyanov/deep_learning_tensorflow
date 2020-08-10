@@ -9,13 +9,17 @@ class CNN(keras.Model):
     def __init__(self):
         super(CNN, self).__init__()
         self.conv1 = keras.layers.Conv2D(64, kernel_size = (3,3), strides = 1,
-                    padding = 'same', activation = 'relu', activity_regularizer = 'l2')
+                    padding = 'same', activation = 'relu')
         self.bn1 = keras.layers.BatchNormalization()
         self.avg_pool1 = keras.layers.MaxPool2D(pool_size = (2, 2))
         self.conv2 = keras.layers.Conv2D(64, kernel_size = (3,5), strides = 1,
-                    padding = 'same', activation = 'relu', activity_regularizer = 'l2')
+                    padding = 'same', activation = 'relu')
         self.bn2 = keras.layers.BatchNormalization()
         self.avg_pool2 = keras.layers.MaxPool2D(pool_size = (2,2))
+        self.conv3 = keras.layers.Conv2D(64, kernel_size = (3,5), strides = 1,
+                    padding = 'same', activation = 'relu')
+        self.bn3 = keras.layers.BatchNormalization()
+        self.avg_pool3 = keras.layers.MaxPool2D(pool_size=(2,2))
         self.flatten = keras.layers.Flatten()
         self.dropout = keras.layers.Dropout(rate = 0.25)
         self.dense = keras.layers.Dense(units = 32)
@@ -25,9 +29,15 @@ class CNN(keras.Model):
         conv = self.conv1(inputs, training = training)
         bn = self.bn1(conv, training = training)
         avg_pool = self.avg_pool1(bn)
+
         conv = self.conv2(avg_pool, training = training)
         bn = self.bn2(conv, training = training)
         avg_pool = self.avg_pool2(bn)
+
+        conv = self.conv3(avg_pool, training = training)
+        bn = self.bn3(conv, training = training)
+        avg_pool = self.avg_pool3(bn)
+
         dropout = self.dropout(avg_pool)
         flat = self.flatten(dropout)
         dense = self.dense(flat, training = training)

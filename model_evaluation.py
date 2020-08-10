@@ -8,14 +8,14 @@ import numpy as np
 from model import Inception_ResNet, CNN, ResNet
 
 from global_vars import BATCH_SIZE, n_mels, t
-from shared_func import print_and_exit, get_dataset, calc_dataset_size
+from shared_func import print_and_exit, get_dataset_no_shuffle, calc_dataset_size
 
 help_msg = "model_evaluation.py -d <data_dir> -p <path>, where path points to a saved model and dir points to dir contaiing eval tfrecord"
 
 def get_eval_dataset(data_dir):
   eval_tfrecord_path = data_dir + "/eval.tfrecord"
 
-  return get_dataset(eval_tfrecord_path)
+  return get_dataset_no_shuffle(eval_tfrecord_path)
 
 def load_and_eval_model(path_to_model, data_dir):
   eval_dataset = get_eval_dataset(data_dir)
@@ -23,7 +23,7 @@ def load_and_eval_model(path_to_model, data_dir):
   net = CNN.CNN()
   net.load_weights(filepath = path_to_model)
 
-  loss_object = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+  loss_object = keras.losses.SparseCategoricalCrossentropy()
 
   eval_loss = keras.metrics.Mean(name = 'eval_loss')
   eval_acc = keras.metrics.SparseCategoricalAccuracy(name = 'eval_acc')

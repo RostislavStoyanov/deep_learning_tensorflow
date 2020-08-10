@@ -140,9 +140,9 @@ def train(data_dir, model_save_dir):
                                                                       train_acc.result().numpy(), valid_acc.result().numpy()))
     print("##########################")
 
-    if stop_training(valid_loss, prev_loss):
-      print("Stopping training at epoch ", epoch)
-      break
+    #if stop_training(valid_loss, prev_loss):
+      #print("Stopping training at epoch ", epoch)
+      #break
     prev_loss = valid_loss.result().numpy()
 
     train_loss.reset_states()
