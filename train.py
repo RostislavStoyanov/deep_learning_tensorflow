@@ -9,7 +9,7 @@ import datetime
 from global_vars import genres, n_mels, t, BATCH_SIZE, EPOCHS, LEARNING_RATE, EPSILON
 from shared_func import print_and_exit, calc_dataset_size, get_dataset
 
-from model import Inception_ResNet, ResNet, CNN
+from model import Inception_ResNet, ResNet, CNN, CNN_1D
 
 help_msg = 'train.py -d <data_dir> -s <model_save_dir>'
 
@@ -50,9 +50,9 @@ def valid_step(spectogram_batch, genre_batch, model, loss_func, valid_loss, vali
 def update_validation(valid_dataset, net, loss_object, valid_loss, valid_acc):
   for valid_batch in valid_dataset:
     valid_spectograms = valid_batch['spectogram'].numpy()
-    spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
+    spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t))
     for i in range(valid_spectograms.shape[0]):
-      spectograms_reshaped[i] = np.frombuffer(valid_spectograms[i], dtype=np.float32).reshape([n_mels, t, 1])
+      spectograms_reshaped[i] = np.frombuffer(valid_spectograms[i], dtype=np.float32).reshape([n_mels, t])
     valid_genres = valid_batch['label'].numpy()
 
     valid_step(spectograms_reshaped, valid_genres, net, loss_object, valid_loss, valid_acc)
@@ -60,7 +60,7 @@ def update_validation(valid_dataset, net, loss_object, valid_loss, valid_acc):
 def save_net_if_better(save_dir, net, best_valid_acc, valid_acc):
   if(best_valid_acc == -1.0 or best_valid_acc <= (valid_acc.result().numpy() - 1e-9)):
     best_valid_acc = valid_acc.result().numpy()
-    print("!!! Saving net with valid_acc = ", best_valid_acc, flush = True)
+    print("---Saving net with valid_acc = ", best_valid_acc, flush = True)
     net.save_weights(filepath = save_dir + "/best_model/", save_format = 'tf')
 
   return best_valid_acc
@@ -71,11 +71,11 @@ def stop_training(valid_loss, prev_loss):
 def train(data_dir, model_save_dir):
   train_dataset, valid_dataset = get_train_valid_datasets(data_dir)
 
-  net = CNN.CNN()
+  net = CNN_1D.CNN_1D()
   view_summary(net)
 
-  loss_object = keras.losses.SparseCategoricalCrossentropy()
-  optimizer = keras.optimizers.Adam()
+  loss_object = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+  optimizer = keras.optimizers.SGD(learning_rate = 5e-3)
 
   train_loss = keras.metrics.Mean(name = 'training_loss')
   valid_loss = keras.metrics.Mean(name = 'validation_loss')
@@ -102,10 +102,10 @@ def train(data_dir, model_save_dir):
       curr_batch_count = curr_batch_count + 1
       
       spectograms = batch['spectogram'].numpy()
-      spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
+      spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t))
 
       for i in range(spectograms.shape[0]):
-        spectograms_reshaped[i] = np.frombuffer(spectograms[i], dtype=np.float32).reshape([n_mels, t, 1])
+        spectograms_reshaped[i] = np.frombuffer(spectograms[i], dtype=np.float32).reshape([n_mels, t])
 
       #print(np.frombuffer(spectograms[0], dtype=np.float32).shape)
       genres = batch['label'].numpy()

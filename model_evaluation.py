@@ -5,7 +5,7 @@ import os
 import math
 import numpy as np
 
-from model import Inception_ResNet, CNN, ResNet
+from model import Inception_ResNet, CNN, ResNet, CNN_1D
 
 from global_vars import BATCH_SIZE, n_mels, t
 from shared_func import print_and_exit, get_dataset_no_shuffle, calc_dataset_size
@@ -20,10 +20,10 @@ def get_eval_dataset(data_dir):
 def load_and_eval_model(path_to_model, data_dir):
   eval_dataset = get_eval_dataset(data_dir)
 
-  net = CNN.CNN()
+  net = CNN_1D.CNN_1D()
   net.load_weights(filepath = path_to_model)
 
-  loss_object = keras.losses.SparseCategoricalCrossentropy()
+  loss_object = keras.losses.SparseCategoricalCrossentropy(from_logits = True)
 
   eval_loss = keras.metrics.Mean(name = 'eval_loss')
   eval_acc = keras.metrics.SparseCategoricalAccuracy(name = 'eval_acc')
@@ -34,13 +34,13 @@ def load_and_eval_model(path_to_model, data_dir):
   for batch in eval_dataset:
     curr_batch_count = curr_batch_count + 1
 
-    spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
+    spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t))
 
     spectograms = batch['spectogram'].numpy()
     genres = batch['label'].numpy()
 
     for i in range(spectograms.shape[0]):
-      spectograms_reshaped[i] = np.frombuffer(spectograms[i], dtype=np.float32).reshape([n_mels, t, 1])
+      spectograms_reshaped[i] = np.frombuffer(spectograms[i], dtype=np.float32).reshape([n_mels, t])
 
     predictions = net(spectograms_reshaped, training = False)
     if(predictions.shape[0] != genres.shape[0]):
