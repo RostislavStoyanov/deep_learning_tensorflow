@@ -9,7 +9,7 @@ class Conv1D_BatchNorm(keras.layers.Layer):
   def __init__(self, filters, kernel_size, strides = 1, padding = 'same'):
     super(Conv1D_BatchNorm, self).__init__()
 
-    self.conv1d = keras.layers.Conv1D(filters = filters, kernel_size = kernel_size, strides = strides, padding = padding, activation = 'relu', activity_regularizer = 'l2')
+    self.conv1d = keras.layers.Conv1D(filters = filters, kernel_size = kernel_size, strides = strides, padding = padding, activation = 'relu', kernel_regularizer = keras.regularizers.l2(0.01), bias_regularizer = keras.regularizers.l2(0.01))
     self.batch_norm = keras.layers.BatchNormalization()
     #self.relu = keras.layers.ReLU()
 
@@ -41,7 +41,7 @@ class CNN_1D(keras.Model):
     self.maxpool5 = keras.layers.MaxPool1D(pool_size = CNN_1D_LAYER_5_MAX_POOL_SIZE)
     
     self.flat = keras.layers.Flatten()
-    self.dense1 = keras.layers.Dense(units = 64, activity_regularizer = 'l2')
+    self.dense1 = keras.layers.Dense(units = 64, kernel_regularizer = 'l2', bias_regularizer = 'l2')
     self.dropout1 = keras.layers.Dropout(rate = 0.5)
     self.softmax = keras.layers.Dense(units = NUM_CLASSES, activation = keras.activations.softmax)
 

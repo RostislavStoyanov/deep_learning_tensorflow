@@ -75,7 +75,7 @@ def train(data_dir, model_save_dir):
   view_summary(net)
 
   loss_object = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-  optimizer = keras.optimizers.SGD(learning_rate = 5e-3)
+  optimizer = keras.optimizers.SGD(learning_rate=5e-3)
 
   train_loss = keras.metrics.Mean(name = 'training_loss')
   valid_loss = keras.metrics.Mean(name = 'validation_loss')
