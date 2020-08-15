@@ -20,8 +20,8 @@ def get_train_valid_datasets(data_dir):
   return get_dataset(train_tfrecord_path), get_dataset(valid_tfrecord_path)
 
 def view_summary(model):
- # model.build(input_shape = (None, n_mels, t, 1))
-  model.model().summary()
+  model.build(input_shape = (None, n_mels, t, 1))
+  model.summary()
 
 @tf.function
 def train_step(spectogram_batch, genre_batch, model, loss_func, optimizer, train_loss, train_acc):
@@ -50,20 +50,21 @@ def valid_step(spectogram_batch, genre_batch, model, loss_func, valid_loss, vali
 def update_validation(valid_dataset, net, loss_object, valid_loss, valid_acc):
   for valid_batch in valid_dataset:
     valid_spectograms = valid_batch['spectogram'].numpy()
-    spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t))
+    spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
     for i in range(valid_spectograms.shape[0]):
       spectograms_reshaped[i] = np.frombuffer(valid_spectograms[i], dtype=np.float32).reshape([n_mels, t])
     valid_genres = valid_batch['label'].numpy()
 
     valid_step(spectograms_reshaped, valid_genres, net, loss_object, valid_loss, valid_acc)
 
-def save_net_if_better(save_dir, net, best_valid_acc, valid_acc):
-  if(best_valid_acc == -1.0 or best_valid_acc <= (valid_acc.result().numpy() - 1e-9)):
-    best_valid_acc = valid_acc.result().numpy()
-    print("---Saving net with valid_acc = ", best_valid_acc, flush = True)
-    net.save_weights(filepath = save_dir + "/best_model/", save_format = 'tf')
+def save_net_if_better(save_dir, net, best_valid, valid, metric):
+  if(best_valid == -1.0 or best_valid <= (valid.result().numpy() - 1e-9)):
+    best_valid = valid.result().numpy()
+    print("---Saving net with valid_acc = ", best_valid, flush = True)
+    #net.save_weights(filepath = save_dir + "/best_model/", save_format = 'tf')
+    net.save(save_dir + "/best_" + metric + '/')
 
-  return best_valid_acc
+  return best_valid
 
 def stop_training(valid_loss, prev_loss):
   return prev_loss != None and valid_loss.result().numpy() > (prev_loss + 1e-3)
@@ -71,11 +72,11 @@ def stop_training(valid_loss, prev_loss):
 def train(data_dir, model_save_dir):
   train_dataset, valid_dataset = get_train_valid_datasets(data_dir)
 
-  net = CNN_1D.CNN_1D()
+  net = Inception_ResNet.Inception_ResNet()
   view_summary(net)
 
   loss_object = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-  optimizer = keras.optimizers.SGD(learning_rate=5e-3)
+  optimizer = keras.optimizers.RMSprop()
 
   train_loss = keras.metrics.Mean(name = 'training_loss')
   valid_loss = keras.metrics.Mean(name = 'validation_loss')
@@ -85,6 +86,7 @@ def train(data_dir, model_save_dir):
 
   train_batch_cnt = calc_dataset_size(train_dataset)
   best_valid_acc = -1.0
+  best_valid_loss = -1.0
 
   current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
   train_log_dir = './logs/gradient_tape/' + current_time + '/train'
@@ -102,12 +104,11 @@ def train(data_dir, model_save_dir):
       curr_batch_count = curr_batch_count + 1
       
       spectograms = batch['spectogram'].numpy()
-      spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t))
+      spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
 
       for i in range(spectograms.shape[0]):
-        spectograms_reshaped[i] = np.frombuffer(spectograms[i], dtype=np.float32).reshape([n_mels, t])
+        spectograms_reshaped[i] = np.frombuffer(spectograms[i], dtype=np.float32).reshape([n_mels, t, 1])
 
-      #print(np.frombuffer(spectograms[0], dtype=np.float32).shape)
       genres = batch['label'].numpy()
 
       train_step(spectograms_reshaped, genres, net, loss_object, optimizer, train_loss, train_acc)
@@ -127,7 +128,8 @@ def train(data_dir, model_save_dir):
 
 
     update_validation(valid_dataset, net, loss_object, valid_loss, valid_acc)
-    best_valid_acc = save_net_if_better(curr_save_dir, net, best_valid_acc, valid_acc)
+    best_valid_acc = save_net_if_better(curr_save_dir, net, best_valid_acc, valid_acc, "accuracy")
+    best_valid_loss = save_net_if_better(curr_save_dir, net, best_valid_loss, valid_loss, "loss")
     
 
     with valid_summary_writer.as_default():
@@ -151,7 +153,8 @@ def train(data_dir, model_save_dir):
     valid_acc.reset_states()
   
   print("Saving final net")
-  net.save_weights(filepath = curr_save_dir + "/training_end/", save_format = 'tf')
+  #net.save_weights(filepath = curr_save_dir + "/training_end/", save_format = 'tf')
+  net.save(curr_save_dir + "/training_end/")
 
 def main(argv):
   data_dir = "./dataset/data"

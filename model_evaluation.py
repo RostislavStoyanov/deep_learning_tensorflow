@@ -20,8 +20,7 @@ def get_eval_dataset(data_dir):
 def load_and_eval_model(path_to_model, data_dir):
   eval_dataset = get_eval_dataset(data_dir)
 
-  net = CNN_1D.CNN_1D()
-  net.load_weights(filepath = path_to_model)
+  net = keras.models.load_model(path_to_model)
 
   loss_object = keras.losses.SparseCategoricalCrossentropy(from_logits = True)
 
@@ -34,7 +33,7 @@ def load_and_eval_model(path_to_model, data_dir):
   for batch in eval_dataset:
     curr_batch_count = curr_batch_count + 1
 
-    spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t))
+    spectograms_reshaped = np.ndarray(shape = (BATCH_SIZE, n_mels, t, 1))
 
     spectograms = batch['spectogram'].numpy()
     genres = batch['label'].numpy()
@@ -43,6 +42,7 @@ def load_and_eval_model(path_to_model, data_dir):
       spectograms_reshaped[i] = np.frombuffer(spectograms[i], dtype=np.float32).reshape([n_mels, t])
 
     predictions = net(spectograms_reshaped, training = False)
+    #print(predictions)
     if(predictions.shape[0] != genres.shape[0]):
       print("Shape mismatch..")
       continue
@@ -73,11 +73,13 @@ def main(argv):
   for opt, arg in opts:
     if opt == '-h':
       print_and_exit(help_msg, 0)
+    if opt == '-d':
+      data_dir = arg
     if opt == '-p':
       path_to_model = arg
   
 
-  if (path_to_model == '' or not os.path.isdir(data_dir) or not os.path.isfile(path_to_model)):
+  if (path_to_model == '' or not os.path.isdir(data_dir) or not os.path.isdir(path_to_model)):
     print_and_exit("Check path... ", 1)
 
   load_and_eval_model(path_to_model, data_dir)  
