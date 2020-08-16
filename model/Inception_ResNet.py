@@ -1,6 +1,10 @@
 import tensorflow as tf
 from tensorflow import keras
+import sys
 from .blocks import Stem, ReductionA, ReductionB, Inception_ResNet_A, Inception_ResNet_B, Inception_ResNet_C
+
+sys.path.insert(0,'..')
+from global_vars import n_mels, t
 
 class Inception_ResNet(tf.keras.Model):
   def __init__(self):
@@ -45,3 +49,7 @@ class Inception_ResNet(tf.keras.Model):
     output = self.softmax(output)
 
     return output
+
+  def model(self):
+    x = keras.Input(shape = (n_mels,t , 1))
+    return keras.Model(inputs = [x], outputs = self.call(x))

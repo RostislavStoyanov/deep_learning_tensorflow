@@ -1,6 +1,10 @@
 import tensorflow as tf
 from tensorflow import keras
+import sys
 from .blocks import ResidualBlock, Conv2D_BatchNorm
+
+sys.path.insert(0,'..')
+from global_vars import n_mels, t
 
 class ResNet(keras.Model):
   def __init__(self):
@@ -38,3 +42,7 @@ class ResNet(keras.Model):
     output = self.dense(output)
     
     return output
+  
+  def model(self):
+    x = keras.Input(shape = (n_mels,t , 1))
+    return keras.Model(inputs = [x], outputs = self.call(x))

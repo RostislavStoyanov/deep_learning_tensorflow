@@ -20,8 +20,8 @@ def get_train_valid_datasets(data_dir):
   return get_dataset(train_tfrecord_path), get_dataset(valid_tfrecord_path)
 
 def view_summary(model):
-  model.build(input_shape = (None, n_mels, t, 1))
-  model.summary()
+  #model.build(input_shape = (None, n_mels, t, 1))
+  model.model().summary()
 
 @tf.function
 def train_step(spectogram_batch, genre_batch, model, loss_func, optimizer, train_loss, train_acc):
@@ -72,11 +72,11 @@ def stop_training(valid_loss, prev_loss):
 def train(data_dir, model_save_dir):
   train_dataset, valid_dataset = get_train_valid_datasets(data_dir)
 
-  net = Inception_ResNet.Inception_ResNet()
+  net = CNN.CNN()
   view_summary(net)
 
   loss_object = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-  optimizer = keras.optimizers.RMSprop()
+  optimizer = keras.optimizers.SGD(learning_rate = 0.005)
 
   train_loss = keras.metrics.Mean(name = 'training_loss')
   valid_loss = keras.metrics.Mean(name = 'validation_loss')
